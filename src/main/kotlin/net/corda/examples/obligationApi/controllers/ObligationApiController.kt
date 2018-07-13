@@ -65,9 +65,6 @@ class ObligationApiController(private val rpc: NodeRPCConnection) {
                 }
     }
 
-    @GetMapping(value = "/cash", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
-    fun cash() = rpcOps.vaultQuery(Cash.State::class.java).states
-
     @GetMapping(value = "/cash-balances", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
     fun getCashBalances() = rpcOps.getCashBalances().mapValues { it.value.toString() }
 

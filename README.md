@@ -41,7 +41,7 @@ We can similarly start up the web apps for *Party B* and *Party C* using the gra
 ### Issue obligation
 `curl http://127.0.0.1:8080/obligation/api/issue-obligation?amount=100&currency=USD&party=PartyB`
 
-### Get list obligations
+### Get list of obligations
 `curl http://127.0.0.1:8080/obligation/api/obligations`
 ### Transfer obligation
 `curl http://127.0.0.1:8080/obligation/api/transfer-obligation?id=4ecee9db-2d37-48f3-b10a-a1dd3cf272da&party=PartyB`

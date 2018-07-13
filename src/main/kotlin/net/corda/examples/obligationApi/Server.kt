@@ -1,4 +1,4 @@
-package net.corda.examples.obligationAPI
+package net.corda.examples.obligationApi
 
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication

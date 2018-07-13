@@ -1,4 +1,4 @@
-package net.corda.examples.obligationAPI
+package net.corda.examples.obligationApi.rpcClient
 
 import net.corda.client.rpc.CordaRPCClient
 import net.corda.core.messaging.CordaRPCOps

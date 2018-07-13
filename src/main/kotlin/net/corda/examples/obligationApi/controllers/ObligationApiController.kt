@@ -1,4 +1,4 @@
-package net.corda.examples.obligationAPI
+package net.corda.examples.obligationApi.controllers
 
 import net.corda.core.contracts.Amount
 import net.corda.core.contracts.UniqueIdentifier
@@ -13,6 +13,10 @@ import net.corda.examples.obligation.Obligation
 import net.corda.examples.obligation.flows.IssueObligation
 import net.corda.examples.obligation.flows.SettleObligation
 import net.corda.examples.obligation.flows.TransferObligation
+import net.corda.examples.obligationApi.models.ObligationSimpleObj
+import net.corda.examples.obligationApi.models.toSimpleName
+import net.corda.examples.obligationApi.models.toSimpleObj
+import net.corda.examples.obligationApi.rpcClient.NodeRPCConnection
 
 import net.corda.finance.contracts.asset.Cash
 import net.corda.finance.contracts.getCashBalances
@@ -29,7 +33,7 @@ class ObligationApiController(private val rpc: NodeRPCConnection) {
     val myIdentity = rpcOps.nodeInfo().legalIdentities.first()
 
     @GetMapping(value = "/me", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
-    fun me() = mapOf("me" to myIdentity.toString())
+    fun me() = mapOf("me" to myIdentity.toSimpleName())
 
     @GetMapping(value = "/peers", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
     fun peers() = mapOf("peers" to rpcOps.networkMapSnapshot()
@@ -44,7 +48,7 @@ class ObligationApiController(private val rpc: NodeRPCConnection) {
             .mapValues { it.value.sum() }
 
     @GetMapping(value = "/obligations", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
-    fun obligations(): List<Obligation> {
+    fun obligations(): List<ObligationSimpleObj> {
         val statesAndRefs = rpcOps.vaultQuery(Obligation::class.java).states
         return statesAndRefs
                 .map { stateAndRef -> stateAndRef.state.data }
@@ -57,7 +61,7 @@ class ObligationApiController(private val rpc: NodeRPCConnection) {
                             possiblyWellKnownLender,
                             possiblyWellKnownBorrower,
                             state.paid,
-                            state.linearId)
+                            state.linearId).toSimpleObj()
                 }
     }
 
@@ -65,9 +69,9 @@ class ObligationApiController(private val rpc: NodeRPCConnection) {
     fun cash() = rpcOps.vaultQuery(Cash.State::class.java).states
 
     @GetMapping(value = "/cash-balances", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
-    fun getCashBalances() = rpcOps.getCashBalances()
+    fun getCashBalances() = rpcOps.getCashBalances().mapValues { it.value.toString() }
 
-    @GetMapping(value = "/self-issue-cash", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    @GetMapping(value = "/self-issue-cash", produces = arrayOf(MediaType.TEXT_PLAIN_VALUE))
     fun selfIssueCash(@RequestParam(value = "amount") amount: Int,
                       @RequestParam(value = "currency") currency: String): ResponseEntity<Any?> {
 
@@ -81,7 +85,7 @@ class ObligationApiController(private val rpc: NodeRPCConnection) {
         val (status, message) = try {
             val flowHandle = rpcOps.startFlowDynamic(CashIssueFlow::class.java, issueRequest)
             val result = flowHandle.use { it.returnValue.getOrThrow() }
-            HttpStatus.CREATED to result.stx.tx.outputs.single().data.toString()
+            HttpStatus.CREATED to "Transaction id ${result.stx.id} committed to ledger.\n${result.stx.tx.outputs.single().data}"
         } catch (e: Exception) {
             HttpStatus.BAD_REQUEST to e.message
         }
@@ -91,7 +95,7 @@ class ObligationApiController(private val rpc: NodeRPCConnection) {
 
     }
 
-    @GetMapping(value = "/issue-obligation", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    @GetMapping(value = "/issue-obligation", produces = arrayOf(MediaType.TEXT_PLAIN_VALUE))
     fun issueObligation(@RequestParam(value = "amount") amount: Int,
                         @RequestParam(value = "currency") currency: String,
                         @RequestParam(value = "party") party: String): ResponseEntity<String> {
@@ -121,7 +125,7 @@ class ObligationApiController(private val rpc: NodeRPCConnection) {
         return ResponseEntity.status(status).body(message)
     }
 
-    @GetMapping(value = "/transfer-obligation", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    @GetMapping(value = "/transfer-obligation", produces = arrayOf(MediaType.TEXT_PLAIN_VALUE))
     fun transferObligation(@RequestParam(value = "id") id: String,
                            @RequestParam(value = "party") party: String): ResponseEntity<String> {
         val linearId = UniqueIdentifier.fromString(id)
@@ -146,7 +150,7 @@ class ObligationApiController(private val rpc: NodeRPCConnection) {
 
     }
 
-    @GetMapping(value = "/settle-obligation", produces = arrayOf(MediaType.APPLICATION_JSON_VALUE))
+    @GetMapping(value = "/settle-obligation", produces = arrayOf(MediaType.TEXT_PLAIN_VALUE))
     fun settleObligation(@RequestParam("id") id: String,
                          @RequestParam("amount") amount: Int,
                          @RequestParam("currency") currency: String): ResponseEntity<String> {
